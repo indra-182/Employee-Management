@@ -19,6 +19,15 @@ export class EmployeeList implements OnInit {
   private destroyRef = inject(DestroyRef);
   private searchSubject$ = new Subject<string>();
 
+  private readonly defaultFilters = {
+    searchName: '',
+    searchStatus: '',
+    sortColumn: 'firstName',
+    sortDirection: 'asc' as const,
+    currentPage: 1,
+    pageSize: 10,
+  };
+
   searchInput = signal(this.employeeService.filterSearchState().name);
 
   filters = signal({
@@ -89,13 +98,20 @@ export class EmployeeList implements OnInit {
     Math.min(this.filters().currentPage * this.filters().pageSize, this.totalItems()),
   );
 
-  ngOnInit(): void {
-    this.searchSubject$
-      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
-      .subscribe((value) => {
-        this.filters.update((f) => ({ ...f, searchName: value }));
-        this.persistFilters();
-      });
+  hasActiveFilters = computed(() => {
+    const f = this.filters();
+    return (
+      f.searchName !== this.defaultFilters.searchName ||
+      f.searchStatus !== this.defaultFilters.searchStatus ||
+      f.sortColumn !== this.defaultFilters.sortColumn ||
+      f.sortDirection !== this.defaultFilters.sortDirection
+    );
+  });
+
+  clearFilters(): void {
+    this.searchInput.set('');
+    this.filters.set({ ...this.defaultFilters });
+    this.persistFilters();
   }
 
   onSearchName(event: Event): void {
@@ -169,5 +185,14 @@ export class EmployeeList implements OnInit {
       currentPage,
       pageSize,
     });
+  }
+
+  ngOnInit(): void {
+    this.searchSubject$
+      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => {
+        this.filters.update((f) => ({ ...f, searchName: value }));
+        this.persistFilters();
+      });
   }
 }
