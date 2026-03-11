@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { Employees } from '@app/shared/models/employee';
 import { FIRST_NAMES, GROUPS, LAST_NAMES } from '@app/shared/utils/constants';
 
-export interface ListState {
+export interface FilterSearch {
   name: string;
   status: string;
   sortColumn: string;
@@ -34,7 +34,7 @@ function generateEmployees(): Employees[] {
 @Injectable({ providedIn: 'root' })
 export class EmployeeService {
   private readonly employees = signal<Employees[]>(generateEmployees());
-  readonly filterSearchState = signal<ListState>({
+  readonly filterSearchState = signal<FilterSearch>({
     name: '',
     status: '',
     sortColumn: 'firstName',
@@ -55,7 +55,7 @@ export class EmployeeService {
     this.employees.update((list) => [...list, employee]);
   }
 
-  saveListState(state: ListState): void {
+  saveListState(state: FilterSearch): void {
     this.filterSearchState.set(state);
   }
 }
