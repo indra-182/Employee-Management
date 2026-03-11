@@ -13,21 +13,23 @@ export class EmployeeList implements OnDestroy {
   private employeeService = inject(EmployeeService);
   private toastr = inject(ToastrService);
   private router = inject(Router);
-
-  searchName = signal(this.employeeService.searchState().name);
-  searchInput = signal(this.employeeService.searchState().name);
-  searchStatus = signal(this.employeeService.searchState().status);
-  private searchDebounceTimer: any = null;
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   private debounceMs = 300; // ms
-  sortColumn = signal('firstName');
-  sortDirection = signal<'asc' | 'desc'>('asc');
-  currentPage = signal(1);
-  pageSize = signal(10);
+
+  filters = signal({
+    searchName: this.employeeService.searchState().name,
+    searchInput: this.employeeService.searchState().name,
+    searchStatus: this.employeeService.searchState().status,
+    sortColumn: 'firstName',
+    sortDirection: 'asc' as 'asc' | 'desc',
+    currentPage: 1,
+    pageSize: 10,
+  });
 
   filtered = computed(() => {
     let list = this.employeeService.getAll();
-    const name = this.searchName().toLowerCase().trim();
-    const status = this.searchStatus();
+    const { searchName, searchStatus, sortColumn, sortDirection } = this.filters();
+    const name = searchName.toLowerCase().trim();
 
     if (name) {
       list = list.filter(
@@ -37,12 +39,12 @@ export class EmployeeList implements OnDestroy {
           e.username.toLowerCase().includes(name),
       );
     }
-    if (status) {
-      list = list.filter((e) => e.status === status);
+    if (searchStatus) {
+      list = list.filter((e) => e.status === searchStatus);
     }
 
-    const col = this.sortColumn() as keyof Employees;
-    const dir = this.sortDirection();
+    const col = sortColumn as keyof Employees;
+    const dir = sortDirection;
     return [...list].sort((a, b) => {
       const aVal = a[col];
       const bVal = b[col];
@@ -53,16 +55,17 @@ export class EmployeeList implements OnDestroy {
   });
 
   totalItems = computed(() => this.filtered().length);
-  totalPages = computed(() => Math.ceil(this.totalItems() / this.pageSize()) || 1);
+  totalPages = computed(() => Math.ceil(this.totalItems() / this.filters().pageSize) || 1);
 
   paged = computed(() => {
-    const start = (this.currentPage() - 1) * this.pageSize();
-    return this.filtered().slice(start, start + this.pageSize());
+    const { currentPage, pageSize } = this.filters();
+    const start = (currentPage - 1) * pageSize;
+    return this.filtered().slice(start, start + pageSize);
   });
 
   visiblePages = computed(() => {
     const total = this.totalPages();
-    const current = this.currentPage();
+    const current = this.filters().currentPage;
     const max = 5;
     if (total <= max) return Array.from({ length: total }, (_, i) => i + 1);
     let start = Math.max(1, current - Math.floor(max / 2));
@@ -71,18 +74,20 @@ export class EmployeeList implements OnDestroy {
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   });
 
-  from = computed(() =>
-    this.totalItems() === 0 ? 0 : (this.currentPage() - 1) * this.pageSize() + 1,
+  from = computed(() => {
+    const { currentPage, pageSize } = this.filters();
+    return this.totalItems() === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  });
+  to = computed(() =>
+    Math.min(this.filters().currentPage * this.filters().pageSize, this.totalItems()),
   );
-  to = computed(() => Math.min(this.currentPage() * this.pageSize(), this.totalItems()));
 
   onSearchName(event: Event): void {
     const val = (event.target as HTMLInputElement).value;
-    this.searchInput.set(val);
-    this.currentPage.set(1);
+    this.filters.update((f) => ({ ...f, searchInput: val, currentPage: 1 }));
     if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
     this.searchDebounceTimer = setTimeout(() => {
-      this.searchName.set(val);
+      this.filters.update((f) => ({ ...f, searchName: val }));
       this.saveSearch();
       this.searchDebounceTimer = null;
     }, this.debounceMs);
@@ -93,32 +98,38 @@ export class EmployeeList implements OnDestroy {
   }
 
   onSearchStatus(event: Event): void {
-    this.searchStatus.set((event.target as HTMLSelectElement).value);
-    this.currentPage.set(1);
+    this.filters.update((f) => ({
+      ...f,
+      searchStatus: (event.target as HTMLSelectElement).value,
+      currentPage: 1,
+    }));
     this.saveSearch();
   }
 
   onPageSize(event: Event): void {
-    this.pageSize.set(+(event.target as HTMLSelectElement).value);
-    this.currentPage.set(1);
+    this.filters.update((f) => ({
+      ...f,
+      pageSize: +(event.target as HTMLSelectElement).value,
+      currentPage: 1,
+    }));
   }
 
   toggleSort(column: string): void {
-    if (this.sortColumn() === column) {
-      this.sortDirection.update((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      this.sortColumn.set(column);
-      this.sortDirection.set('asc');
-    }
+    this.filters.update((f) => ({
+      ...f,
+      sortColumn: column,
+      sortDirection: f.sortColumn === column ? (f.sortDirection === 'asc' ? 'desc' : 'asc') : 'asc',
+    }));
   }
 
   sortIcon(column: string): string {
-    if (this.sortColumn() !== column) return '↕';
-    return this.sortDirection() === 'asc' ? '↑' : '↓';
+    const { sortColumn, sortDirection } = this.filters();
+    if (sortColumn !== column) return '↕';
+    return sortDirection === 'asc' ? '↑' : '↓';
   }
 
   goToPage(page: number): void {
-    this.currentPage.set(page);
+    this.filters.update((f) => ({ ...f, currentPage: page }));
   }
 
   viewDetail(employee: Employees): void {
@@ -136,9 +147,7 @@ export class EmployeeList implements OnDestroy {
   }
 
   private saveSearch(): void {
-    this.employeeService.saveSearchState({
-      name: this.searchName(),
-      status: this.searchStatus(),
-    });
+    const { searchName, searchStatus } = this.filters();
+    this.employeeService.saveSearchState({ name: searchName, status: searchStatus });
   }
 }
