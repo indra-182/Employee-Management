@@ -16,6 +16,11 @@ export const routes: Routes = [
           import('@/app/features/employee/list/employee-list').then((p) => p.EmployeeList),
       },
       {
+        path: 'add',
+        loadComponent: () =>
+          import('@app/features/employee/add/employee-add').then((m) => m.EmployeeAdd),
+      },
+      {
         path: ':username',
         loadComponent: () =>
           import('@/app/features/employee/detail/employee-detail').then((p) => p.EmployeeDetail),
