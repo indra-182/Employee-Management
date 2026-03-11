@@ -1,10 +1,14 @@
 import { Injectable, signal } from '@angular/core';
-import { Employees } from '@app/shared/models/employees';
-import { FIRST_NAMES, GROUPS, LAST_NAMES } from '@app/utils/constants';
+import { Employees } from '@app/shared/models/employee';
+import { FIRST_NAMES, GROUPS, LAST_NAMES } from '@app/shared/utils/constants';
 
-interface SearchState {
+export interface ListState {
   name: string;
   status: string;
+  sortColumn: string;
+  sortDirection: 'asc' | 'desc';
+  currentPage: number;
+  pageSize: number;
 }
 
 function generateEmployees(): Employees[] {
@@ -30,7 +34,14 @@ function generateEmployees(): Employees[] {
 @Injectable({ providedIn: 'root' })
 export class EmployeeService {
   private readonly employees = signal<Employees[]>(generateEmployees());
-  readonly searchState = signal<SearchState>({ name: '', status: '' });
+  readonly filterSearchState = signal<ListState>({
+    name: '',
+    status: '',
+    sortColumn: 'firstName',
+    sortDirection: 'asc',
+    currentPage: 1,
+    pageSize: 10,
+  });
 
   getAll(): Employees[] {
     return this.employees();
@@ -44,7 +55,7 @@ export class EmployeeService {
     this.employees.update((list) => [...list, employee]);
   }
 
-  saveSearchState(state: SearchState): void {
-    this.searchState.set(state);
+  saveListState(state: ListState): void {
+    this.filterSearchState.set(state);
   }
 }

@@ -1,8 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
-import { Employees } from '@app/shared/models/employees';
-import { EmployeeService } from '@/app/services/employee/employee.service';
+import { Employees } from '@app/shared/models/employee';
+import { EmployeeService } from '@app/core/services/employee/employee.service';
 import { RupiahPipe } from '@app/shared/pipes/rupiah.pipe';
 
 @Component({

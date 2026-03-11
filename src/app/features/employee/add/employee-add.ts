@@ -1,10 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { GROUPS } from '@app/utils/constants';
-import { EmployeeService } from '@app/services/employee/employee.service';
-import { ToastrService } from '@app/services/toastr/toastr.service';
-import { pastDateValidator } from '@/app/utils/functions';
+import { GROUPS } from '@app/shared/utils/constants';
+import { EmployeeService } from '@app/core/services/employee/employee.service';
+import { ToastrService } from '@app/core/services/toastr/toastr.service';
+import { pastDateValidator } from '@app/shared/utils/functions';
 import { ConfirmDialog } from '@app/shared/components/confirm-dialog/confirm-dialog';
 
 @Component({

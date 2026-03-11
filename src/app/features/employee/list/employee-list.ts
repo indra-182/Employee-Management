@@ -1,8 +1,8 @@
 import { Component, computed, inject, signal, OnDestroy } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { Employees } from '@app/shared/models/employees';
-import { EmployeeService } from '@/app/services/employee/employee.service';
-import { ToastrService } from '@app/services/toastr/toastr.service';
+import { Employees } from '@app/shared/models/employee';
+import { EmployeeService } from '@app/core/services/employee/employee.service';
+import { ToastrService } from '@app/core/services/toastr/toastr.service';
 
 @Component({
   selector: 'app-employee-list',
@@ -17,13 +17,13 @@ export class EmployeeList implements OnDestroy {
   private debounceMs = 300; // ms
 
   filters = signal({
-    searchName: this.employeeService.searchState().name,
-    searchInput: this.employeeService.searchState().name,
-    searchStatus: this.employeeService.searchState().status,
-    sortColumn: 'firstName',
-    sortDirection: 'asc' as 'asc' | 'desc',
-    currentPage: 1,
-    pageSize: 10,
+    searchName: this.employeeService.filterSearchState().name,
+    searchInput: this.employeeService.filterSearchState().name,
+    searchStatus: this.employeeService.filterSearchState().status,
+    sortColumn: this.employeeService.filterSearchState().sortColumn,
+    sortDirection: this.employeeService.filterSearchState().sortDirection,
+    currentPage: this.employeeService.filterSearchState().currentPage,
+    pageSize: this.employeeService.filterSearchState().pageSize,
   });
 
   filtered = computed(() => {
@@ -88,7 +88,7 @@ export class EmployeeList implements OnDestroy {
     if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
     this.searchDebounceTimer = setTimeout(() => {
       this.filters.update((f) => ({ ...f, searchName: val }));
-      this.saveSearch();
+      this.saveFilters();
       this.searchDebounceTimer = null;
     }, this.debounceMs);
   }
@@ -103,7 +103,7 @@ export class EmployeeList implements OnDestroy {
       searchStatus: (event.target as HTMLSelectElement).value,
       currentPage: 1,
     }));
-    this.saveSearch();
+    this.saveFilters();
   }
 
   onPageSize(event: Event): void {
@@ -112,6 +112,7 @@ export class EmployeeList implements OnDestroy {
       pageSize: +(event.target as HTMLSelectElement).value,
       currentPage: 1,
     }));
+    this.saveFilters();
   }
 
   toggleSort(column: string): void {
@@ -120,6 +121,7 @@ export class EmployeeList implements OnDestroy {
       sortColumn: column,
       sortDirection: f.sortColumn === column ? (f.sortDirection === 'asc' ? 'desc' : 'asc') : 'asc',
     }));
+    this.saveFilters();
   }
 
   sortIcon(column: string): string {
@@ -130,6 +132,7 @@ export class EmployeeList implements OnDestroy {
 
   goToPage(page: number): void {
     this.filters.update((f) => ({ ...f, currentPage: page }));
+    this.saveFilters();
   }
 
   viewDetail(employee: Employees): void {
@@ -146,8 +149,16 @@ export class EmployeeList implements OnDestroy {
     this.toastr.error(`Delete action for ${employee.firstName} ${employee.lastName}`);
   }
 
-  private saveSearch(): void {
-    const { searchName, searchStatus } = this.filters();
-    this.employeeService.saveSearchState({ name: searchName, status: searchStatus });
+  private saveFilters(): void {
+    const { searchName, searchStatus, sortColumn, sortDirection, currentPage, pageSize } =
+      this.filters();
+    this.employeeService.saveListState({
+      name: searchName,
+      status: searchStatus,
+      sortColumn,
+      sortDirection,
+      currentPage,
+      pageSize,
+    });
   }
 }
