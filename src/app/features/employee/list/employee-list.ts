@@ -2,7 +2,7 @@ import { Component, computed, inject, signal, OnDestroy } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Employees } from '@app/shared/models/employees';
 import { EmployeeService } from '@/app/services/employee/employee.service';
-import { NotificationService } from '@app/services/notifications/notifications.service';
+import { ToastrService } from '@app/services/toastr/toastr.service';
 
 @Component({
   selector: 'app-employee-list',
@@ -11,7 +11,7 @@ import { NotificationService } from '@app/services/notifications/notifications.s
 })
 export class EmployeeList implements OnDestroy {
   private employeeService = inject(EmployeeService);
-  private notification = inject(NotificationService);
+  private toastr = inject(ToastrService);
   private router = inject(Router);
 
   searchName = signal(this.employeeService.searchState().name);
@@ -127,15 +127,12 @@ export class EmployeeList implements OnDestroy {
 
   onEdit(event: Event, employee: Employees): void {
     event.stopPropagation();
-    this.notification.show(`Edit action for ${employee.firstName} ${employee.lastName}`, 'warning');
+    this.toastr.warning(`Edit action for ${employee.firstName} ${employee.lastName}`);
   }
 
   onDelete(event: Event, employee: Employees): void {
     event.stopPropagation();
-    this.notification.show(
-      `Delete action for ${employee.firstName} ${employee.lastName}`,
-      'danger',
-    );
+    this.toastr.error(`Delete action for ${employee.firstName} ${employee.lastName}`);
   }
 
   private saveSearch(): void {

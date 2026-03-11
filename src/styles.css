@@ -1,6 +1,14 @@
 /* You can add global styles to this file, and also import other style files */
 
 @import 'tailwindcss';
+@import 'ngx-toastr/toastr';
+
+.toast-warning {
+  background-color: #facc15 !important;
+}
+.toast-error {
+  background-color: #ef4444 !important;
+}
 
 * {
   font-family: 'Inter', system-ui, sans-serif;
